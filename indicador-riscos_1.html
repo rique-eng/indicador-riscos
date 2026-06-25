@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indicador Preliminar de Exposição a Riscos de Controle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0F1F3D;
+      --navy-mid:   #1E3A5F;
+      --navy-light: #2D5282;
+      --slate:      #334155;
+      --muted:      #64748B;
+      --border:     #E2E8F0;
+      --surface:    #F8FAFC;
+      --white:      #FFFFFF;
+      --green:      #16A34A;
+      --green-bg:   #DCFCE7;
+      --amber:      #D97706;
+      --amber-bg:   #FEF3C7;
+      --red:        #DC2626;
+      --red-bg:     #FEE2E2;
+      --accent:     #2563EB;
+      --accent-dark:#1D4ED8;
+      --radius:     10px;
+      --radius-lg:  16px;
+      --shadow-sm:  0 1px 3px rgba(0,0,0,.08);
+      --shadow-md:  0 4px 16px rgba(0,0,0,.10);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,.14);
+      --font-display: 'DM Serif Display', Georgia, serif;
+      --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--slate);
+      background: var(--surface);
+      min-height: 100vh;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: flex; }
+
+    /* ══════════════════════════════════════
+       INTRO
+    ══════════════════════════════════════ */
+    #screen-intro {
+      align-items: stretch;
+      background: var(--white);
+    }
+    .intro-layout {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 4rem 3rem 5rem;
+      max-width: 680px;
+    }
+    .intro-badge {
+      display: inline-block;
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-radius: 99px;
+      padding: .25rem .8rem;
+      margin-bottom: 1.5rem;
+      width: fit-content;
+    }
+    .intro-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      line-height: 1.15;
+      color: var(--navy);
+      margin-bottom: 1.25rem;
+    }
+    .intro-title em { font-style: italic; color: var(--navy-light); }
+    .intro-subtitle {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 480px;
+      margin-bottom: 2rem;
+    }
+    .intro-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      margin-bottom: 2.5rem;
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--slate);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: .3rem .85rem;
+    }
+    .meta-item svg { color: var(--accent); flex-shrink: 0; }
+    .intro-disclaimer {
+      margin-top: 1.5rem;
+      font-size: .75rem;
+      color: var(--muted);
+      max-width: 400px;
+      line-height: 1.5;
+    }
+
+    /* Intro visual */
+    .intro-visual {
+      flex: 1;
+      background: linear-gradient(145deg, var(--navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .gauge-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .75rem;
+    }
+    .gauge-svg {
+      width: clamp(180px, 20vw, 260px);
+      filter: drop-shadow(0 4px 20px rgba(0,0,0,.3));
+    }
+    .gauge-needle {
+      transform-origin: 110px 110px;
+      transform: rotate(-60deg);
+      animation: needleIdle 3s ease-in-out infinite alternate;
+    }
+    @keyframes needleIdle {
+      from { transform: rotate(-65deg); }
+      to   { transform: rotate(-10deg); }
+    }
+    .gauge-labels {
+      display: flex;
+      justify-content: space-between;
+      width: clamp(180px, 20vw, 260px);
+    }
+    .gauge-label { font-size: .7rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+    .gauge-label.low  { color: #4ADE80; }
+    .gauge-label.mid  { color: #FCD34D; }
+    .gauge-label.high { color: #F87171; }
+    .gauge-caption { font-size: .8rem; color: rgba(255,255,255,.5); letter-spacing: .04em; }
+
+    /* ══════════════════════════════════════
+       QUIZ
+    ══════════════════════════════════════ */
+    #screen-quiz { flex-direction: column; background: var(--surface); }
+    .quiz-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 720px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+    .quiz-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 0 1rem;
+      border-bottom: 1px solid var(--border);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-brand {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex: 1;
+      max-width: 300px;
+    }
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--navy-light));
+      border-radius: 99px;
+      transition: width .4s cubic-bezier(.4,0,.2,1);
+      width: 12.5%;
+    }
+    .progress-label { font-size: .78rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .quiz-body { flex: 1; padding: 3rem 0 2rem; }
+
+    .question-card { animation: fadeUp .35s ease both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .question-number {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .75rem;
+    }
+    .question-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+      line-height: 1.4;
+      color: var(--navy);
+      margin-bottom: 2rem;
+    }
+    .options-list { display: flex; flex-direction: column; gap: .75rem; list-style: none; }
+    .option-item { position: relative; }
+    .option-item input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+    .option-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--white);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color .18s, background .18s, box-shadow .18s;
+      user-select: none;
+    }
+    .option-label:hover { border-color: #93C5FD; background: #F0F7FF; }
+    .option-item input:checked + .option-label {
+      border-color: var(--accent);
+      background: #EFF6FF;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+    .option-key {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; color: var(--muted);
+      transition: background .18s, border-color .18s, color .18s;
+    }
+    .option-item input:checked + .option-label .option-key {
+      background: var(--accent); border-color: var(--accent); color: var(--white);
+    }
+    .option-text { font-size: .92rem; line-height: 1.5; color: var(--slate); padding-top: 3px; }
+    .quiz-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 0 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ══════════════════════════════════════
+       CAPTURE
+    ══════════════════════════════════════ */
+    #screen-capture {
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      padding: 2rem 1.5rem;
+    }
+    .capture-shell {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2.5rem;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      animation: fadeUp .4s ease both;
+    }
+    .capture-icon {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.5rem;
+      color: white;
+    }
+    .capture-title { font-family: var(--font-display); font-size: 1.75rem; color: var(--navy); margin-bottom: .75rem; }
+    .capture-text { font-size: .9rem; color: var(--muted); line-height: 1.65; margin-bottom: 2rem; }
+    .capture-form { display: flex; flex-direction: column; gap: 1.25rem; }
+    .field-group { display: flex; flex-direction: column; gap: .4rem; }
+    .field-group label { font-size: .82rem; font-weight: 600; color: var(--slate); letter-spacing: .01em; }
+    .required { color: var(--red); margin-left: 2px; }
+    .field-group input {
+      width: 100%;
+      padding: .75rem 1rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font-body);
+      font-size: .9rem;
+      color: var(--slate);
+      background: var(--white);
+      transition: border-color .18s, box-shadow .18s;
+      outline: none;
+    }
+    .field-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    .field-group input.invalid { border-color: var(--red); }
+    .field-error { font-size: .75rem; color: var(--red); min-height: 1em; }
+    .phone-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .phone-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    .phone-prefix {
+      display: flex; align-items: center;
+      padding: 0 .9rem;
+      background: var(--surface);
+      border-right: 2px solid var(--border);
+      font-size: .85rem; font-weight: 600; color: var(--slate);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .phone-wrap input { border: none !important; box-shadow: none !important; border-radius: 0; flex: 1; }
+    .phone-wrap.invalid { border-color: var(--red); }
+    .capture-privacy {
+      display: flex; align-items: center; gap: .4rem;
+      font-size: .72rem; color: var(--muted); margin-top: 1.25rem;
+    }
+    .capture-privacy svg { flex-shrink: 0; }
+
+    /* ══════════════════════════════════════
+       RESULT
+    ══════════════════════════════════════ */
+    #screen-result {
+      flex-direction: column;
+      background: var(--surface);
+      padding: 2rem 1.5rem;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .result-shell { max-width: 680px; width: 100%; animation: fadeUp .4s ease both; }
+    .result-header {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 2.5rem 2rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .result-badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      border-radius: 99px; padding: .3rem 1rem; margin-bottom: 1rem;
+    }
+    .result-badge.low  { background: var(--green-bg); color: var(--green); }
+    .result-badge.mid  { background: var(--amber-bg); color: var(--amber); }
+    .result-badge.high { background: var(--red-bg);   color: var(--red);   }
+    .result-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      color: var(--navy); line-height: 1.25; margin-bottom: 1.5rem;
+    }
+    .result-score-wrap { display: flex; align-items: center; gap: 1.5rem; }
+    .result-gauge {
+      width: 56px; height: 56px; border-radius: 50%;
+      border: 5px solid var(--border); position: relative; flex-shrink: 0;
+    }
+    .result-gauge.low  { border-color: var(--green); }
+    .result-gauge.mid  { border-color: var(--amber); }
+    .result-gauge.high { border-color: var(--red); }
+    .result-score { display: flex; align-items: baseline; gap: .25rem; }
+    .score-number { font-family: var(--font-display); font-size: 3.5rem; line-height: 1; color: var(--navy); }
+    .score-max { font-size: 1.25rem; font-weight: 300; color: var(--muted); }
+    .score-label { font-size: .82rem; font-weight: 500; color: var(--muted); margin-left: .25rem; }
+    .result-body { display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 1.25rem; }
+    .result-section {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2rem 2.5rem; box-shadow: var(--shadow-sm);
+    }
+    .result-section h3 {
+      font-size: .78rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 1rem;
+    }
+    .result-section p { font-size: .95rem; line-height: 1.75; color: var(--slate); }
+    .result-section p + p { margin-top: .85rem; }
+    .priority-box { border-left: 4px solid var(--accent); }
+    .priority-box h3 { display: flex; align-items: center; gap: .4rem; color: var(--accent); }
+    .result-cta {
+      background: var(--navy); border-radius: var(--radius-lg);
+      padding: 2rem 2.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1.5rem; flex-wrap: wrap;
+    }
+    .result-cta-text { font-size: .95rem; color: rgba(255,255,255,.8); }
+
+    /* ══════════════════════════════════════
+       BUTTONS
+    ══════════════════════════════════════ */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: .6rem;
+      padding: .85rem 1.75rem;
+      background: var(--accent); color: var(--white);
+      font-family: var(--font-body); font-size: .9rem; font-weight: 600;
+      border: none; border-radius: var(--radius); cursor: pointer;
+      text-decoration: none;
+      transition: background .18s, box-shadow .18s, transform .12s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { background: var(--accent-dark); box-shadow: 0 4px 16px rgba(37,99,235,.35); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-primary:disabled { background: #94A3B8; cursor: not-allowed; box-shadow: none; }
+    .btn-full { width: 100%; justify-content: center; }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .85rem 1.25rem;
+      background: transparent; color: var(--muted);
+      font-family: var(--font-body); font-size: .9rem; font-weight: 500;
+      border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer;
+      transition: color .18s, border-color .18s, background .18s;
+    }
+    .btn-ghost:hover { color: var(--slate); border-color: #CBD5E1; background: var(--white); }
+    .spinner { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════ */
+    @media (max-width: 900px) {
+      #screen-intro { flex-direction: column; }
+      .intro-layout { max-width: 100%; padding: 2.5rem 1.5rem; }
+      .intro-visual { padding: 2.5rem 1.5rem; min-height: 220px; }
+    }
+    @media (max-width: 600px) {
+      .quiz-header { flex-direction: column; align-items: flex-start; gap: .75rem; }
+      .progress-wrap { max-width: 100%; width: 100%; }
+      .quiz-nav { gap: .75rem; }
+      .btn-primary, .btn-ghost { padding: .8rem 1.1rem; font-size: .85rem; }
+      .capture-shell { padding: 2rem 1.25rem; }
+      .capture-title { font-size: 1.45rem; }
+      .result-header { padding: 1.75rem 1.25rem 1.5rem; }
+      .result-section { padding: 1.5rem 1.25rem; }
+      .result-cta { padding: 1.5rem 1.25rem; flex-direction: column; align-items: flex-start; }
+      .score-number { font-size: 2.75rem; }
+      .intro-title { font-size: 1.75rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .gauge-needle { animation: none; }
+      .question-card, .capture-shell, .result-shell { animation: none; }
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TELA INICIAL -->
+  <section id="screen-intro" class="screen active">
+    <div class="intro-layout">
+      <div class="intro-badge">DIAGNÓSTICO PRELIMINAR</div>
+      <h1 class="intro-title">Indicador de Exposição a <em>Riscos de Controle</em></h1>
+      <p class="intro-subtitle">Em menos de 5 minutos, identifique o nível de exposição da sua entidade a riscos de integridade, conformidade e capacitação.</p>
+      <div class="intro-meta">
+        <span class="meta-item">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/></svg>
+          8 perguntas · ~3 min
+        </span>
+        <span class="meta-item">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 12l2 2 4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke-width="2"/></svg>
+          Diagnóstico instantâneo
+        </span>
+        <span class="meta-item">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" stroke-width="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke-width="2" stroke-linecap="round"/></svg>
+          Dados protegidos
+        </span>
+      </div>
+      <button class="btn-primary" id="btn-start">
+        Iniciar diagnóstico
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <p class="intro-disclaimer">Este indicador não substitui uma auditoria formal. Serve como referência preliminar de maturidade em conformidade e gestão de riscos.</p>
+    </div>
+    <div class="intro-visual" aria-hidden="true">
+      <div class="gauge-wrapper">
+        <svg class="gauge-svg" viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 110 A90 90 0 0 1 200 110" stroke="#E5E7EB" stroke-width="14" stroke-linecap="round" fill="none"/>
+          <path d="M20 110 A90 90 0 0 1 83 32" stroke="#22C55E" stroke-width="14" stroke-linecap="round" fill="none"/>
+          <path d="M83 32 A90 90 0 0 1 157 32" stroke="#F59E0B" stroke-width="14" stroke-linecap="round" fill="none"/>
+          <path d="M157 32 A90 90 0 0 1 200 110" stroke="#EF4444" stroke-width="14" stroke-linecap="round" fill="none"/>
+          <circle cx="110" cy="110" r="5" fill="#1E293B"/>
+          <line class="gauge-needle" x1="110" y1="110" x2="110" y2="30" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <div class="gauge-labels">
+          <span class="gauge-label low">Baixa</span>
+          <span class="gauge-label mid">Moderada</span>
+          <span class="gauge-label high">Alta</span>
+        </div>
+        <p class="gauge-caption">Nível de exposição a riscos</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA QUIZ -->
+  <section id="screen-quiz" class="screen">
+    <div class="quiz-shell">
+      <header class="quiz-header">
+        <div class="quiz-brand">Indicador de Riscos de Controle</div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          <span class="progress-label" id="progress-label">1 / 8</span>
+        </div>
+      </header>
+      <div class="quiz-body" id="quiz-body"></div>
+      <div class="quiz-nav">
+        <button class="btn-ghost" id="btn-prev" style="visibility:hidden">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 12H5M12 5l-7 7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Anterior
+        </button>
+        <button class="btn-primary" id="btn-next" disabled>
+          Próxima
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA CAPTURA -->
+  <section id="screen-capture" class="screen">
+    <div class="capture-shell">
+      <div class="capture-icon" aria-hidden="true">
+        <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h2 class="capture-title">Seu indicador foi calculado</h2>
+      <p class="capture-text">
+        Seu perfil aponta pontos de atenção em integridade, conformidade e capacitação.<br>
+        Informe seus dados para receber o diagnóstico completo e as recomendações.
+      </p>
+      <form id="capture-form" class="capture-form" novalidate>
+        <div class="field-group">
+          <label for="field-name">Nome Completo <span class="required">*</span></label>
+          <input type="text" id="field-name" name="name" placeholder="Seu nome completo" autocomplete="name" required />
+          <span class="field-error" id="err-name"></span>
+        </div>
+        <div class="field-group">
+          <label for="field-phone">Telefone / WhatsApp <span class="required">*</span></label>
+          <div class="phone-wrap" id="phone-wrap">
+            <span class="phone-prefix">🇧🇷 +55</span>
+            <input type="tel" id="field-phone" name="phone" placeholder="(00) 00000-0000" autocomplete="tel" required />
+          </div>
+          <span class="field-error" id="err-phone"></span>
+        </div>
+        <div class="field-group">
+          <label for="field-org">Entidade / Organização <span class="required">*</span></label>
+          <input type="text" id="field-org" name="org" placeholder="Nome da entidade ou organização" autocomplete="organization" required />
+          <span class="field-error" id="err-org"></span>
+        </div>
+        <button type="submit" class="btn-primary btn-full" id="btn-submit">
+          <span id="btn-submit-text">Ver meu diagnóstico</span>
+          <span id="btn-submit-loader" style="display:none;align-items:center;gap:.5rem;">
+            <svg class="spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-width="2" stroke-linecap="round"/></svg>
+            Processando…
+          </span>
+        </button>
+      </form>
+      <p class="capture-privacy">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" stroke-width="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke-width="2" stroke-linecap="round"/></svg>
+        Seus dados são tratados com sigilo e não serão compartilhados com terceiros.
+      </p>
+    </div>
+  </section>
+
+  <!-- TELA RESULTADO -->
+  <section id="screen-result" class="screen">
+    <div class="result-shell">
+      <div class="result-header">
+        <div class="result-badge" id="result-badge"></div>
+        <h2 class="result-title" id="result-title"></h2>
+        <div class="result-score-wrap">
+          <div class="result-gauge" id="result-gauge" aria-hidden="true"></div>
+          <div class="result-score">
+            <span class="score-number" id="score-number"></span>
+            <span class="score-max">/ 24</span>
+            <span class="score-label">pontos</span>
+          </div>
+        </div>
+      </div>
+      <div class="result-body">
+        <div class="result-section">
+          <h3>Diagnóstico</h3>
+          <div id="result-desc"></div>
+        </div>
+        <div class="result-section priority-box">
+          <h3>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Prioridade recomendada
+          </h3>
+          <p id="result-priority"></p>
+        </div>
+      </div>
+      <div class="result-cta">
+        <p class="result-cta-text">Quer aprofundar a análise com especialistas?</p>
+        <button class="btn-primary" onclick="window.location.reload()">
+          Refazer o diagnóstico
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  'use strict';
+
+  /* ── CONFIGURAÇÃO ─────────────────────────────────────────
+     Substitua pela URL do seu Google Apps Script Web App
+  ───────────────────────────────────────────────────────── */
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1Ag4ocz58A8_r0vBFTqwPM-V6oSiGyMRsAAJ8a2gYTTsE3lLJUm4TEO6JVSSNA-Z-yA/exec';
+
+  /* ── PERGUNTAS ──────────────────────────────────────────── */
+  const questions = [
+    {
+      text: 'Como você avalia o nível de conhecimento das equipes sobre as normas e regulamentos aplicáveis à sua área de atuação?',
+      options: [
+        { key: 'A', text: 'As equipes têm pleno conhecimento das normas vigentes e as aplicam sistematicamente.', points: 0 },
+        { key: 'B', text: 'O conhecimento existe, mas há lacunas em temas específicos ou nas equipes de apoio.', points: 1 },
+        { key: 'C', text: 'O conhecimento é superficial; a equipe age mais por prática do que por fundamentação normativa.', points: 2 },
+        { key: 'D', text: 'Não há cultura de atualização normativa; as equipes desconhecem mudanças recentes na legislação.', points: 3 }
+      ]
+    },
+    {
+      text: 'A entidade possui e mantém atualizado um programa formal de integridade, compliance ou código de conduta?',
+      options: [
+        { key: 'A', text: 'Sim, o programa está atualizado, é comunicado regularmente e integra os processos de trabalho.', points: 0 },
+        { key: 'B', text: 'Existe um programa ou código, mas não é revisado nem comunicado com regularidade.', points: 1 },
+        { key: 'C', text: 'Está em elaboração ou foi aprovado apenas formalmente, sem aplicação prática.', points: 2 },
+        { key: 'D', text: 'Não existe qualquer programa de integridade ou código de conduta.', points: 3 }
+      ]
+    },
+    {
+      text: 'Como é feita a gestão e a documentação dos processos críticos de aquisição, contratação e prestação de contas?',
+      options: [
+        { key: 'A', text: 'Todos os processos são documentados, arquivados e acessíveis conforme exigências legais.', points: 0 },
+        { key: 'B', text: 'A maioria dos processos é documentada, mas há inconsistências em alguns registros.', points: 1 },
+        { key: 'C', text: 'A documentação existe, mas é dispersa, incompleta ou difícil de localizar.', points: 2 },
+        { key: 'D', text: 'Não há padrão definido; documentação é feita de forma informal e incompleta.', points: 3 }
+      ]
+    },
+    {
+      text: 'A entidade realiza capacitações periódicas sobre temas de controle interno, gestão de riscos ou conformidade para seus colaboradores?',
+      options: [
+        { key: 'A', text: 'Sim, há um plano de capacitação estruturado com frequência regular e cobertura ampla.', points: 0 },
+        { key: 'B', text: 'Ocorrem capacitações eventuais, mas sem planejamento ou cobertura sistemática.', points: 1 },
+        { key: 'C', text: 'Raramente são realizadas; dependem de demandas externas ou de iniciativas individuais.', points: 2 },
+        { key: 'D', text: 'Não existem capacitações nessa área.', points: 3 }
+      ]
+    },
+    {
+      text: 'Como a entidade responde quando identificada uma irregularidade, inconformidade ou risco de gestão?',
+      options: [
+        { key: 'A', text: 'Há um protocolo definido: registro, análise, correção e monitoramento formalizados.', points: 0 },
+        { key: 'B', text: 'A resposta existe, mas é ad hoc; depende da iniciativa de quem identificou o problema.', points: 1 },
+        { key: 'C', text: 'As irregularidades são tratadas pontualmente, sem registro ou aprendizado institucional.', points: 2 },
+        { key: 'D', text: 'Não há mecanismo estabelecido; irregularidades são ignoradas ou suprimidas internamente.', points: 3 }
+      ]
+    },
+    {
+      text: 'Qual é o grau de formalização dos controles internos para processos de gestão de pessoas (contratação, avaliação, folha de pagamento)?',
+      options: [
+        { key: 'A', text: 'Totalmente formalizado, com segregação de funções, registros e auditorias periódicas.', points: 0 },
+        { key: 'B', text: 'Parcialmente formalizado; existem controles, mas com pontos cegos ou sem revisão regular.', points: 1 },
+        { key: 'C', text: 'Controles existem de forma rudimentar, sem sistemática definida.', points: 2 },
+        { key: 'D', text: 'Não há controles internos formalizados para gestão de pessoas.', points: 3 }
+      ]
+    },
+    {
+      text: 'Diante de uma fiscalização ou auditoria externa, qual seria a capacidade da entidade de apresentar evidências organizadas de suas decisões e despesas?',
+      options: [
+        { key: 'A', text: 'Alta: as evidências são organizadas por processo e podem ser apresentadas rapidamente.', points: 0 },
+        { key: 'B', text: 'Moderada: é possível reunir a maioria das evidências, mas exigiria tempo e esforço.', points: 1 },
+        { key: 'C', text: 'Baixa: parte das evidências está dispersa, incompleta ou em formato inadequado.', points: 2 },
+        { key: 'D', text: 'Muito baixa: há dificuldade significativa para apresentar documentação suficiente.', points: 3 }
+      ]
+    },
+    {
+      text: 'Como é tratada a transparência e a comunicação com órgãos de controle, parceiros e beneficiários?',
+      options: [
+        { key: 'A', text: 'Há política de transparência ativa; informações são publicadas e atualizadas regularmente.', points: 0 },
+        { key: 'B', text: 'A transparência existe, mas é reativa: informações são prestadas apenas quando solicitadas.', points: 1 },
+        { key: 'C', text: 'A comunicação é inconsistente; não há clareza sobre o que deve ser divulgado ou a quem.', points: 2 },
+        { key: 'D', text: 'A entidade não adota práticas de transparência proativa nem tem canais de prestação de contas.', points: 3 }
+      ]
+    }
+  ];
+
+  /* ── RESULTADOS ─────────────────────────────────────────── */
+  const results = [
+    {
+      range: [0, 7],
+      level: 'low',
+      badge: '✔ Baixa Exposição',
+      title: 'Baixa Exposição a Riscos de Controle',
+      desc: [
+        'Sua pontuação indica que a entidade possui um bom nível de estruturação em aspectos críticos de integridade, conformidade, capacitação e organização de evidências.',
+        'Em geral, organizações nesse perfil apresentam processos mais consistentes, maior previsibilidade na prestação de contas e melhor capacidade de resposta diante de fiscalizações externas.',
+        'Os resultados sugerem que práticas importantes já estão incorporadas à rotina da gestão, reduzindo a probabilidade de apontamentos relacionados à falta de documentação, ausência de controles ou desatualização das equipes.',
+        'O principal desafio não está na correção de falhas, mas na manutenção da maturidade alcançada.'
+      ],
+      priority: 'Preservar a cultura de atualização contínua, revisar periodicamente os controles existentes e garantir que o conhecimento crítico esteja disseminado entre as equipes-chave.'
+    },
+    {
+      range: [8, 15],
+      level: 'mid',
+      badge: '⚠ Exposição Moderada',
+      title: 'Exposição Moderada a Riscos de Controle',
+      desc: [
+        'Sua pontuação indica que a entidade possui bases importantes para garantia da integridade, da conformidade e da gestão, mas apresenta lacunas que podem aumentar a exposição a questionamentos, ressalvas, determinações ou recomendações dos órgãos de controle.',
+        'Os resultados costumam apontar fragilidades em capacitação, atualização normativa, gestão de riscos, formalização de processos e organização de evidências.',
+        'Embora essas vulnerabilidades nem sempre gerem problemas imediatos, elas tendem a aparecer durante fiscalizações e auditorias.',
+        'O risco não está necessariamente na ausência de regras, mas na falta de consistência na aplicação dos controles existentes.'
+      ],
+      priority: 'Fortalecer os pontos mais vulneráveis identificados, especialmente aqueles relacionados à capacitação das equipes, documentação de processos e acompanhamento das exigências regulatórias.'
+    },
+    {
+      range: [16, 24],
+      level: 'high',
+      badge: '✕ Alta Exposição',
+      title: 'Alta Exposição a Riscos de Controle',
+      desc: [
+        'Sua pontuação indica um nível elevado de exposição a riscos relacionados à integridade, conformidade, prestação de contas e capacidade de resposta diante de fiscalizações.',
+        'Os resultados sugerem fragilidades relevantes em processos, controles internos, capacitação de equipes e gestão de evidências.',
+        'Em um cenário de fiscalização, essas fragilidades podem aumentar significativamente a probabilidade de apontamentos, determinações, recomendações, demandas adicionais de esclarecimento e até responsabilização de dirigentes, gestores e colaboradores.'
+      ],
+      priority: 'Realizar uma revisão estruturada dos processos críticos, fortalecer a capacitação das equipes, implementar mecanismos formais de controle interno e organizar a documentação necessária para sustentar decisões, aquisições, contratações, gestão de pessoas e prestações de contas.'
+    }
+  ];
+
+  /* ── STATE ──────────────────────────────────────────────── */
+  let currentQuestion = 0;
+  const answers = new Array(questions.length).fill(null);
+
+  /* ── NAVEGAÇÃO ──────────────────────────────────────────── */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const t = document.getElementById(id);
+    if (t) { t.classList.add('active'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  }
+
+  /* ── RENDERIZAR PERGUNTA ────────────────────────────────── */
+  function renderQuestion(index) {
+    const q      = questions[index];
+    const body   = document.getElementById('quiz-body');
+    const fill   = document.getElementById('progress-fill');
+    const label  = document.getElementById('progress-label');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+
+    fill.style.width = ((index + 1) / questions.length * 100) + '%';
+    label.textContent = (index + 1) + ' / ' + questions.length;
+    btnPrev.style.visibility = index === 0 ? 'hidden' : 'visible';
+
+    const isLast = index === questions.length - 1;
+    btnNext.innerHTML = isLast
+      ? 'Ver resultado <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      : 'Próxima <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    btnNext.disabled = answers[index] === null;
+
+    const optionsHTML = q.options.map(function(opt) {
+      return '<li class="option-item">' +
+        '<input type="radio" name="q' + index + '" id="q' + index + '_' + opt.key + '" value="' + opt.key + '" data-points="' + opt.points + '"' + (answers[index] && answers[index].key === opt.key ? ' checked' : '') + ' />' +
+        '<label for="q' + index + '_' + opt.key + '" class="option-label">' +
+        '<span class="option-key">' + opt.key + '</span>' +
+        '<span class="option-text">' + opt.text + '</span>' +
+        '</label></li>';
+    }).join('');
+
+    body.innerHTML = '<div class="question-card">' +
+      '<p class="question-number">Pergunta ' + (index + 1) + ' de ' + questions.length + '</p>' +
+      '<h2 class="question-text">' + q.text + '</h2>' +
+      '<ul class="options-list" role="radiogroup">' + optionsHTML + '</ul>' +
+      '</div>';
+
+    body.querySelectorAll('input[name="q' + index + '"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        answers[index] = { key: radio.value, points: parseInt(radio.dataset.points, 10) };
+        btnNext.disabled = false;
+      });
+    });
+  }
+
+  /* ── EVENTOS DE NAVEGAÇÃO ───────────────────────────────── */
+  document.getElementById('btn-start').addEventListener('click', function() {
+    showScreen('screen-quiz');
+    renderQuestion(0);
+  });
+
+  document.getElementById('btn-prev').addEventListener('click', function() {
+    if (currentQuestion > 0) { currentQuestion--; renderQuestion(currentQuestion); }
+  });
+
+  document.getElementById('btn-next').addEventListener('click', function() {
+    if (answers[currentQuestion] === null) return;
+    if (currentQuestion < questions.length - 1) {
+      currentQuestion++;
+      renderQuestion(currentQuestion);
+    } else {
+      showScreen('screen-capture');
+    }
+  });
+
+  /* ── MÁSCARA TELEFONE ───────────────────────────────────── */
+  document.getElementById('field-phone').addEventListener('input', function() {
+    var v = this.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+    if (v.length > 6)      v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
+    else if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2);
+    else if (v.length > 0) v = '(' + v;
+    this.value = v;
+  });
+
+  /* ── VALIDAÇÃO ──────────────────────────────────────────── */
+  function showError(errId, input, msg) {
+    document.getElementById(errId).textContent = msg;
+    input.classList.add('invalid');
+  }
+  function clearError(errId, input) {
+    document.getElementById(errId).textContent = '';
+    input.classList.remove('invalid');
+  }
+  function validateForm() {
+    var name  = document.getElementById('field-name');
+    var phone = document.getElementById('field-phone');
+    var org   = document.getElementById('field-org');
+    var wrap  = document.getElementById('phone-wrap');
+    var valid = true;
+
+    if (!name.value.trim() || name.value.trim().split(' ').filter(Boolean).length < 2) {
+      showError('err-name', name, 'Informe nome e sobrenome.');
+      valid = false;
+    } else { clearError('err-name', name); }
+
+    var digits = phone.value.replace(/\D/g, '');
+    if (digits.length < 10) {
+      showError('err-phone', phone, 'Telefone inválido. Ex: (61) 99999-9999');
+      wrap.classList.add('invalid');
+      valid = false;
+    } else { clearError('err-phone', phone); wrap.classList.remove('invalid'); }
+
+    if (!org.value.trim()) {
+      showError('err-org', org, 'Informe a entidade ou organização.');
+      valid = false;
+    } else { clearError('err-org', org); }
+
+    return valid;
+  }
+
+  /* ── PONTUAÇÃO E RESULTADO ──────────────────────────────── */
+  function calcScore() {
+    return answers.reduce(function(sum, a) { return sum + (a ? a.points : 0); }, 0);
+  }
+  function getResult(score) {
+    return results.find(function(r) { return score >= r.range[0] && score <= r.range[1]; }) || results[2];
+  }
+
+  /* ── ENVIO PARA GOOGLE SHEETS ───────────────────────────── */
+  async function sendToSheets(data) {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  }
+
+  /* ── EXIBIR RESULTADO ───────────────────────────────────── */
+  function showResult(score, result) {
+    document.getElementById('result-badge').textContent = result.badge;
+    document.getElementById('result-badge').className   = 'result-badge ' + result.level;
+    document.getElementById('result-title').textContent = result.title;
+    document.getElementById('score-number').textContent = score;
+    document.getElementById('result-gauge').className   = 'result-gauge ' + result.level;
+
+    var descEl = document.getElementById('result-desc');
+    descEl.innerHTML = result.desc.map(function(p) { return '<p>' + p + '</p>'; }).join('');
+    document.getElementById('result-priority').textContent = result.priority;
+
+    showScreen('screen-result');
+  }
+
+  /* ── SUBMIT ─────────────────────────────────────────────── */
+  document.getElementById('capture-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    var btnText   = document.getElementById('btn-submit-text');
+    var btnLoader = document.getElementById('btn-submit-loader');
+    var btnSubmit = document.getElementById('btn-submit');
+
+    btnText.style.display   = 'none';
+    btnLoader.style.display = 'inline-flex';
+    btnSubmit.disabled      = true;
+
+    var score  = calcScore();
+    var result = getResult(score);
+
+    try {
+      await sendToSheets({
+        name:  document.getElementById('field-name').value.trim(),
+        phone: '+55 ' + document.getElementById('field-phone').value.trim(),
+        org:   document.getElementById('field-org').value.trim(),
+        score: score,
+        level: result.title,
+        q1: answers[0] ? answers[0].key : '-',
+        q2: answers[1] ? answers[1].key : '-',
+        q3: answers[2] ? answers[2].key : '-',
+        q4: answers[3] ? answers[3].key : '-',
+        q5: answers[4] ? answers[4].key : '-',
+        q6: answers[5] ? answers[5].key : '-',
+        q7: answers[6] ? answers[6].key : '-',
+        q8: answers[7] ? answers[7].key : '-'
+      });
+    } catch(err) {
+      console.warn('Sheets: falha no envio.', err);
+    }
+
+    showResult(score, result);
+  });
+  </script>
+</body>
+</html>
